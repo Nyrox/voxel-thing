@@ -1,0 +1,8 @@
+[package]
+name = "graphics"
+version = "0.1.0"
+authors = ["Nyrox <mark.oliver@hotmail.de>"]
+
+[dependencies]
+glutin="*"
+gl="*"
