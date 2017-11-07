@@ -1,9 +1,7 @@
 [package]
-name = "graphics"
+name = "math"
 version = "0.1.0"
 authors = ["Nyrox <mark.oliver@hotmail.de>"]
 
 [dependencies]
-glutin="*"
-gl="*"
-math={ path="../math" }
+num="*"

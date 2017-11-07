@@ -8,8 +8,7 @@ authors = ["Nyrox <mark.oliver@hotmail.de>"]
 glutin="*"
 gl="*"
 libc="*"
-graphics = { path = "graphics" }
-
-
+graphics = { path="graphics" }
+math = { path="math" }
 
 [workspace]

@@ -11,6 +11,10 @@ pub struct Shader {
 	handle: GLuint
 }
 
+pub trait Uniform {
+	fn set(&self, id: &str, handle: GLuint);
+}
+
 // This class name lies, its really a ShaderProgram
 impl Drop for Shader {
 	fn drop(&mut self) {
@@ -78,5 +82,9 @@ impl Shader {
 			}
 		}
 		Ok(())
+	}
+	
+	pub fn setUniform<T>(&self, id: &str, val: T) where T: Uniform {
+		val.set(id, self.handle);
 	}
 }

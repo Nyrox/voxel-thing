@@ -2,6 +2,8 @@
 
 in vec2 position;
 
+uniform mat4 perspective;
+
 void main() {
-	gl_Position = vec4(position.x, position.y, 0.0, 1.0);
+	gl_Position = perspective * vec4(position.x, position.y - position.x, -5, 1.0);
 }

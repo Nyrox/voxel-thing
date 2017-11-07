@@ -8,6 +8,10 @@ extern crate graphics;
 use graphics::OpenGLContext;
 use graphics::Shader;
 
+extern crate math;
+use math::matrix::Matrix4f;
+use math::vector::Vector4f;
+
 use glutin::GlContext;
 
 mod rectangle_shape;
@@ -37,7 +41,20 @@ fn main() {
     unsafe {
         gl::ClearColor(0.0, 1.0, 0.0, 1.0);
     }
-
+	
+	
+	let mat = Matrix4f::translate(1.0, 1.5, 1.0);
+	let vec = Vector4f::position(1.2, 0.7, 0.25);
+	
+	let perspective = Matrix4f::perspective(1.2, 1280.0 / 720.0, 0.01, 100.0);
+	println!("{:?}", perspective);
+	
+	println!("{:?}", vec);
+	let vec = mat.mul_vec(vec);
+	println!("{:?}", vec);
+	
+	shader.setUniform("perspective", perspective);
+	
     let mut running = true;
     while running {
 		opengl.poll_events();
@@ -50,8 +67,8 @@ fn main() {
 	                },
 	                _ => ()
 	            }
-		}		
-	
+		}
+		
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT);
         }
