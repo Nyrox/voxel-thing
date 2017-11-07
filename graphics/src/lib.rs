@@ -3,6 +3,7 @@ pub use self::shader::Shader;
 
 pub mod context;
 pub mod shader;
+pub mod vertex;
 
 use std::ffi::CString;
 

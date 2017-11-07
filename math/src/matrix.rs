@@ -4,7 +4,7 @@ use std::ops::{Add, Mul, Div, Sub, Index, IndexMut};
 extern crate num;
 use self::num::traits::{Num, Float, NumCast};
 
-use vector::Vector4;
+use vector4::Vector4;
 
 #[derive(Debug, Default)]
 pub struct Matrix4<T> {

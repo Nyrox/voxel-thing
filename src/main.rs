@@ -10,7 +10,7 @@ use graphics::Shader;
 
 extern crate math;
 use math::matrix::Matrix4f;
-use math::vector::Vector4f;
+use math::vector4::Vector4f;
 
 use glutin::GlContext;
 
