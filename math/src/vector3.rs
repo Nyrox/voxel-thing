@@ -14,5 +14,7 @@ pub type Vector3i = Vector3<i32>;
 pub type Vector3l = Vector3<i64>;
 
 impl<T> Vector3<T> where T: One + Zero {
-	
+	pub fn new(x: T, y: T, z: T) -> Vector3<T> {
+		Vector3 { x, y, z }
+	}
 }

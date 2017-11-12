@@ -1,7 +1,16 @@
 #version 330 core
 
-out vec4 color;
+in vec3 frag_normal;
+in vec3 frag_position;
+
+out vec4 out_color;
 
 void main() {
-	color = vec4(0.25, 0.62, 0.45, 1.0);
+	vec3 light_pos = vec3(1, 1, -3.5);
+	vec3 l = normalize(light_pos - frag_position);
+	float diff = max(dot(frag_normal, l), 0.10);
+	
+	vec3 color = vec3(diff);
+	
+	out_color = vec4(color, 1.0);
 }

@@ -39,6 +39,8 @@ impl OpenGLContext {
 		unsafe { 
 			gl_window.make_current().unwrap();
 			gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);
+			gl::Enable(gl::DEPTH_TEST);
+			gl::DepthFunc(gl::LESS);
 		}
 		
 		OpenGLContext { events_loop, window: gl_window, event_buffer: Vec::new() }	

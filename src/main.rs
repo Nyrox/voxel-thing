@@ -7,6 +7,8 @@ extern crate libc;
 extern crate graphics;
 use graphics::OpenGLContext;
 use graphics::Shader;
+use graphics::Mesh;
+
 
 extern crate math;
 use math::matrix::Matrix4f;
@@ -19,6 +21,7 @@ use rectangle_shape::RectangleShape;
 
 use std::fs::File;
 use std::io::Read;
+use std::path::PathBuf;
 
 fn read_file_contents(filename: &str) -> String {
 	let mut f = File::open(filename).unwrap();
@@ -37,6 +40,9 @@ fn main() {
 	shader.attach(&read_file_contents("assets/shaders/tri.fs"), gl::FRAGMENT_SHADER).unwrap();
 	shader.compile().unwrap();
 	shader.bind();
+	
+	let mesh = Mesh::load_ply(PathBuf::from("assets/meshes/cube.ply"));
+	println!("{:?}", mesh);
 	
     unsafe {
         gl::ClearColor(0.0, 1.0, 0.0, 1.0);
@@ -70,10 +76,11 @@ fn main() {
 		}
 		
         unsafe {
-            gl::Clear(gl::COLOR_BUFFER_BIT);
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 		
-		r.draw();
+	//	r.draw();
+		mesh.draw();
 		
         opengl.window.swap_buffers().unwrap();
     }

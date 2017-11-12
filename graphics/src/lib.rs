@@ -1,9 +1,13 @@
+#![deny(unused_must_use)]
+
 pub use self::context::OpenGLContext;
 pub use self::shader::Shader;
+pub use self::mesh::Mesh;
 
 pub mod context;
 pub mod shader;
 pub mod vertex;
+pub mod mesh;
 
 use std::ffi::CString;
 
@@ -14,7 +18,7 @@ use shader::{Uniform};
 extern crate gl;
 use self::gl::types::{GLuint};
 
-impl<f32> Uniform for Matrix4<f32> where f32: std::fmt::Debug {
+impl Uniform for Matrix4<f32> {
 	fn set(&self, id: &str, handle: GLuint) {		
 		unsafe {
 			let name = CString::new(id.as_bytes()).unwrap();
