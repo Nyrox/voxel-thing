@@ -45,7 +45,7 @@ fn main() {
 	println!("{:?}", mesh);
 	
     unsafe {
-        gl::ClearColor(0.0, 1.0, 0.0, 1.0);
+        gl::ClearColor(0.05, 0.05, 0.05, 1.0);
     }
 	
 	
