@@ -8,7 +8,7 @@ use std::mem;
 use std::ptr;
 
 use vertex::Vertex;
-use math::Vector3f;
+use math::{Vector3f, Vector2f};
 
 use gl::types::*;
 
@@ -51,6 +51,10 @@ impl Mesh {
 			// Normals
 			gl::VertexAttribPointer(1, 3, gl::FLOAT, 0, mem::size_of::<Vertex>() as i32, offset_of!(Vertex, normal) as *const GLvoid);
 			gl::EnableVertexAttribArray(1);
+			
+			// Uv's
+			gl::VertexAttribPointer(2, 2, gl::FLOAT, 0, mem::size_of::<Vertex>() as i32, offset_of!(Vertex, uv) as *const GLvoid);
+			gl::EnableVertexAttribArray(2);
 			
 			gl::BindVertexArray(0);
 		}
@@ -97,7 +101,8 @@ impl Mesh {
 			let values = tokens.map(|t| t.parse::<f32>().unwrap()).collect::<Vec<f32>>();
 			vertices.push(Vertex {
 				position: Vector3f::new(values[0], values[1], values[2]),
-				normal: Vector3f::new(values[3], values[4], values[5])
+				normal: Vector3f::new(values[3], values[4], values[5]),
+				uv: Vector2f::new(values[6], values[7])
 			});
 		};
 		

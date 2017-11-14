@@ -1,13 +1,17 @@
+#![feature(ord_max_min)]
+
 #![deny(unused_must_use)]
 
 pub use self::context::OpenGLContext;
 pub use self::shader::Shader;
 pub use self::mesh::Mesh;
+pub use self::texture::Texture2D;
 
 pub mod context;
 pub mod shader;
 pub mod vertex;
 pub mod mesh;
+pub mod texture;
 
 use std::ffi::CString;
 

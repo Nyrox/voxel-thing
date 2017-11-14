@@ -7,3 +7,4 @@ authors = ["Nyrox <mark.oliver@hotmail.de>"]
 glutin="*"
 gl="*"
 math={ path="../math" }
+stb_image="*"

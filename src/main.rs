@@ -5,9 +5,7 @@ extern crate glutin;
 extern crate libc;
 
 extern crate graphics;
-use graphics::OpenGLContext;
-use graphics::Shader;
-use graphics::Mesh;
+use graphics::{OpenGLContext, Shader, Mesh, Texture2D};
 
 
 extern crate math;
@@ -43,6 +41,11 @@ fn main() {
 	
 	let mesh = Mesh::load_ply(PathBuf::from("assets/meshes/cube.ply"));
 	println!("{:?}", mesh);
+	
+	let albedo = Texture2D::new(PathBuf::from("assets/textures/harshbricks-albedo.png"), gl::SRGB8);
+	let roughness = Texture2D::new(PathBuf::from("assets/textures/harshbricks-roughness.png"), gl::R8);
+	albedo.bind(0);
+	roughness.bind(1);
 	
     unsafe {
         gl::ClearColor(0.05, 0.05, 0.05, 1.0);

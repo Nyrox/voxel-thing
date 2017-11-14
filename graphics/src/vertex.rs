@@ -1,13 +1,12 @@
 extern crate math;
-use self::math::Vector3f;
+use self::math::{Vector3f, Vector2f};
 
 
 #[derive(Debug)]
 pub struct Vertex {
 	pub position: Vector3f,
 	pub normal: Vector3f,
-	
-	// uv: Vector2f
+	pub uv: Vector2f
 }
 
 impl Vertex {

@@ -2,8 +2,13 @@
 
 in vec3 frag_normal;
 in vec3 frag_position;
+in vec2 uv;
 
 out vec4 out_color;
+
+uniform sampler2D t_albedo;
+uniform sampler2D t_roughness;
+uniform sampler2D t_metalness;
 
 const float PI = 3.14159265359;
 
@@ -52,13 +57,12 @@ vec3 fresnel(vec3 object_color, vec3 n, vec3 l, float metalness) {
 }
 
 void main() {
-	const float roughness = 0.5;
-	const float metallic = 1;
-	
 	vec3 light_pos = vec3(0, 1.5, -6);
-	vec3 light_strength = vec3(11, 4, 3);
-	vec3 object_color = vec3(0.7, 0.4, 0.3);
-
+	vec3 light_strength = vec3(8, 8, 8);
+	vec3 object_color = texture(t_albedo, uv).rgb;
+	float roughness = texture(t_roughness, uv).r;
+	float metallic = 0;
+	
 	vec3 camera_pos = vec3(0);
 	
 	vec3 wi = normalize(light_pos - frag_position);
