@@ -10,5 +10,6 @@ gl="*"
 libc="*"
 graphics = { path="graphics" }
 math = { path="math" }
+serde_json="*"
 
 [workspace]

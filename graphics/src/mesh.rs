@@ -52,9 +52,13 @@ impl Mesh {
 			gl::VertexAttribPointer(1, 3, gl::FLOAT, 0, mem::size_of::<Vertex>() as i32, offset_of!(Vertex, normal) as *const GLvoid);
 			gl::EnableVertexAttribArray(1);
 			
-			// Uv's
-			gl::VertexAttribPointer(2, 2, gl::FLOAT, 0, mem::size_of::<Vertex>() as i32, offset_of!(Vertex, uv) as *const GLvoid);
+			// Tangents
+			gl::VertexAttribPointer(2, 3, gl::FLOAT, 0, mem::size_of::<Vertex>() as i32, offset_of!(Vertex, tangent) as *const GLvoid);
 			gl::EnableVertexAttribArray(2);
+			
+			// Uv's
+			gl::VertexAttribPointer(3, 2, gl::FLOAT, 0, mem::size_of::<Vertex>() as i32, offset_of!(Vertex, uv) as *const GLvoid);
+			gl::EnableVertexAttribArray(3);
 			
 			gl::BindVertexArray(0);
 		}
@@ -102,7 +106,8 @@ impl Mesh {
 			vertices.push(Vertex {
 				position: Vector3f::new(values[0], values[1], values[2]),
 				normal: Vector3f::new(values[3], values[4], values[5]),
-				uv: Vector2f::new(values[6], values[7])
+				uv: Vector2f::new(values[6], values[7]),
+				tangent: Vector3f::default()
 			});
 		};
 		
@@ -113,7 +118,14 @@ impl Mesh {
 			
 			match values[0] {
 				3 => {
-					indices.append(&mut vec!(values[1], values[2], values[3]));
+					let mut face = [values[1], values[2], values[3]];
+					
+					let tangent = Vertex::calculate_tangent(vertices[face[0] as usize], vertices[face[1] as usize], vertices[face[2] as usize]);
+					vertices[face[0] as usize].tangent = tangent;
+					vertices[face[1] as usize].tangent = tangent;
+					vertices[face[2] as usize].tangent = tangent;
+					
+					indices.append(&mut face.to_vec());
 				}
 				_ => { }
 			}

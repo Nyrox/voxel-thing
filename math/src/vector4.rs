@@ -1,7 +1,7 @@
 extern crate num;
 use self::num::traits::{ One, Zero };
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Vector4<T> {
 	pub x: T,
 	pub y: T,

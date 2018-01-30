@@ -27,7 +27,6 @@ impl Uniform for Matrix4<f32> {
 		unsafe {
 			let name = CString::new(id.as_bytes()).unwrap();
 			let location = gl::GetUniformLocation(handle, name.as_ptr());
-			println!("{:?}, {:?}, {:?}", id, location, *self);
 			gl::ProgramUniformMatrix4fv(handle, location, 1, gl::FALSE, self.data.as_ptr() as *const _);
 		}
 	}
