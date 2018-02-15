@@ -12,13 +12,14 @@ out mat3 TBN;
 
 uniform mat4 perspective;
 uniform mat4 view;
+uniform mat4 model;
 
 void main() {
-	gl_Position = perspective * view * vec4(position, 1.0);
+	gl_Position = perspective * view * model * vec4(position, 1.0);
 	frag_position = vec3(position.x, position.y, position.z);
 	frag_normal = normalize(normal);
 	uv = _uv;
-	
+
 	vec3 T = normalize(tangent);
 	vec3 N = normalize(normal);
 	T = normalize(T - dot(T, N) * N);

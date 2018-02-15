@@ -1,48 +1,36 @@
-extern crate glutin;
 extern crate gl;
+extern crate glfw;
 
-use self::glutin::GlContext;
+use std::sync::mpsc::Receiver;
 
+use context::glfw::Context;
+use self::glfw::{Glfw, Window, WindowEvent};
 
 pub struct OpenGLContext {
-	pub events_loop: glutin::EventsLoop,
-	pub window: glutin::GlWindow,
-	
-	event_buffer: Vec<glutin::Event>
+	pub glfw: Glfw,
+	pub window: Window,
+	pub events: Receiver<(f64, WindowEvent)>
 }
 
 impl OpenGLContext {
-	pub fn poll_events(&mut self) {
-		// Borrow the event buffer explicitly, to avoid rusts borrow checker from complaining about borrowing 'self' in the closure
-		// This will hopefully be fixed in a future rust version
-		let event_buffer = &mut self.event_buffer;
-		self.events_loop.poll_events(|event| {
-			event_buffer.push(event);
-		});
-	}
-	
-	pub fn poll_event(&mut self) -> Option<glutin::Event> {
-		self.event_buffer.pop()
-	}
-	
 	pub fn new() -> OpenGLContext {
-		let events_loop = glutin::EventsLoop::new();
-		let window = glutin::WindowBuilder::new().with_title("Praise, kek!").with_dimensions(1280, 720);
-		
-		let context = glutin::ContextBuilder::new()
-		.with_vsync(true)
-		.with_gl_profile(glutin::GlProfile::Core)
-		.with_gl_debug_flag(true);
-		
-		let gl_window = glutin::GlWindow::new(window, context, &events_loop).unwrap();
-		
-		unsafe { 
-			gl_window.make_current().unwrap();
-			gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);
+		let glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
+
+		let (mut window, events) = glfw.create_window(1280, 720, "hello this is window", glfw::WindowMode::Windowed).expect("failed to create glfw window");
+		window.set_key_polling(true);
+		window.make_current();
+
+		unsafe {
+			gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 			gl::Enable(gl::DEPTH_TEST);
 			gl::DepthFunc(gl::LESS);
 		}
-		
-		OpenGLContext { events_loop, window: gl_window, event_buffer: Vec::new() }	
+
+		OpenGLContext { glfw, window, events }
 	}
+
+	pub fn poll_events(&mut self) {
+		self.glfw.poll_events();
+	}
+
 }

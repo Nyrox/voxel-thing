@@ -1,35 +1,29 @@
 #![deny(unused_must_use)]
 
 extern crate gl;
-extern crate glutin;
 extern crate libc;
-
+extern crate glfw;
+extern crate cgmath;
 extern crate graphics;
-use graphics::{OpenGLContext, Shader, Mesh, Texture2D};
-
-
-extern crate math;
-use math::matrix::Matrix4f;
-use math::vector4::Vector4f;
-use math::vector3::Vector3;
-
-use glutin::GlContext;
-use glutin::VirtualKeyCode;
-use glutin::{KeyboardInput};
+extern crate serde_json;
 
 mod rectangle_shape;
+mod camera;
+mod transform;
+
+use transform::Transform;
+use graphics::{OpenGLContext, Shader, Mesh, Texture2D};
 use rectangle_shape::RectangleShape;
+use camera::{Camera};
+use glfw::{Key, Action, Context};
 
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
 
-mod camera;
-use camera::{Camera};
+use cgmath::{Vector3, Matrix4, Rad, Deg, PerspectiveFov};
 
-extern crate serde_json;
 
-struct X();
 
 
 fn read_file_contents(filename: &str) -> String {
@@ -55,13 +49,13 @@ fn main() {
 	let r = RectangleShape::new();
 	println!("{:?}", r);
 
-	// let shader = Shader::new();
-	// shader.attach(&read_file_contents("assets/shaders/tri.vs"), gl::VERTEX_SHADER).unwrap();
-	// shader.attach(&read_file_contents("assets/shaders/tri.fs"), gl::FRAGMENT_SHADER).unwrap();
-	// shader.compile().unwrap();
-	// shader.bind();
+	let shader = Shader::new();
+	shader.attach(&read_file_contents("assets/shaders/tri.vs"), gl::VERTEX_SHADER).unwrap();
+	shader.attach(&read_file_contents("assets/shaders/tri.fs"), gl::FRAGMENT_SHADER).unwrap();
+	shader.compile().unwrap();
+	shader.bind();
 
-	let shader = load_shader(PathBuf::from("assets/shaders/schema.json"));
+	// let shader = load_shader(PathBuf::from("assets/shaders/schema.json"));
 
 	let mesh = Mesh::load_ply(PathBuf::from("assets/meshes/cube.ply"));
 	println!("{:?}", mesh);
@@ -78,39 +72,38 @@ fn main() {
         gl::ClearColor(0.05, 0.05, 0.05, 1.0);
     }
 
+	let mut camera = Camera::new(Transform::default(), PerspectiveFov { fovy: Rad::from(Deg(75.0)), aspect: 1280.0 / 720.0, near: 0.1, far: 100.0 });
+	camera.transform.position.z = 3.0;
 
-	let mat = Matrix4f::translate(9.0, 1.5, 1.0);
-	let vec = Vector4f::position(1.2, 0.7, 0.25);
-	let view = Matrix4f::look_at(Vector3::new(0.0, 0.0, 3.0), Vector3::default(), Vector3::up());
-
-	let mut camera = Camera::new();
-	camera.position.z = 3.0;
-
-	let perspective = Matrix4f::perspective(1.2, 1280.0 / 720.0, 0.01, 100.0);
-	println!("{:?}", perspective);
-
-	println!("{:?}", vec);
-	let vec = mat.mul_vec(vec);
-	println!("{:?}", vec);
-
-	shader.setUniform("perspective", perspective);
-	shader.setUniform("view", view);
+	shader.setUniform("model", Matrix4::<f32>::from_translation(Vector3::new(1.0, 0.0, 0.0)));
+	shader.setUniform("perspective", camera.get_projection_matrix());
 
     let mut running = true;
-    while running {
+    while !opengl.window.should_close() {
 		opengl.poll_events();
-		while let Some(event) = opengl.poll_event() {
+
+
+		for(_, event) in glfw::flush_messages(&opengl.events) {
 			match event {
-	            glutin::Event::WindowEvent{ event, .. } => match event {
-	                glutin::WindowEvent::Closed => running = false,
-	                glutin::WindowEvent::Resized(w, h) => opengl.window.resize(w, h),
-					glutin::WindowEvent::KeyboardInput { input: KeyboardInput { virtual_keycode: Some(VirtualKeyCode::W), ..}, ..} => {
-						camera.position.z += 0.01;
-					}
-	                _ => ()
-	            },
-	            _ => ()
+				glfw::WindowEvent::Close => { opengl.window.set_should_close(true); }
+				glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
+					opengl.window.set_should_close(true);
+				},
+				_ => {}
 			}
+		}
+
+		if opengl.window.get_key(Key::W) == Action::Press {
+			camera.transform.position.z += -0.01;
+		}
+		if opengl.window.get_key(Key::S) == Action::Press {
+			camera.transform.position.z += 0.01;
+		}
+		if opengl.window.get_key(Key::A) == Action::Press {
+			camera.transform.position.x += -0.01;
+		}
+		if opengl.window.get_key(Key::D) == Action::Press {
+			camera.transform.position.x += 0.01;
 		}
 
 		shader.setUniform("view", camera.get_view_matrix());
@@ -119,9 +112,9 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
-		r.draw();
-		// mesh.draw();
+		// r.draw();
+		mesh.draw();
 
-        opengl.window.swap_buffers().unwrap();
+		opengl.window.swap_buffers();
     }
 }

@@ -9,7 +9,8 @@ glutin="*"
 gl="*"
 libc="*"
 graphics = { path="graphics" }
-math = { path="math" }
+cgmath="*"
 serde_json="*"
+glfw="*"
 
 [workspace]
