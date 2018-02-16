@@ -5,7 +5,6 @@ authors = ["Nyrox <mark.oliver@hotmail.de>"]
 
 
 [dependencies]
-glutin="*"
 gl="*"
 libc="*"
 graphics = { path="graphics" }

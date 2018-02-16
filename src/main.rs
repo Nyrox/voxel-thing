@@ -1,5 +1,7 @@
 #![deny(unused_must_use)]
 
+#![feature(duration_extras)]
+
 extern crate gl;
 extern crate libc;
 extern crate glfw;
@@ -20,11 +22,14 @@ use glfw::{Key, Action, Context};
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
+use std::time;
 
 use cgmath::prelude::*;
 use cgmath::{Vector3, Matrix4, Quaternion, Rad, Deg, PerspectiveFov};
 
 use std::sync::{Mutex, Arc};
+
+use gl::types::*;
 
 
 
@@ -48,27 +53,48 @@ fn load_shader(path: PathBuf) -> Shader {
 
 fn main() {
 	let mut opengl = OpenGLContext::new();
-	let r = RectangleShape::new();
+	let r = RectangleShape::new(1280.0, 720.0);
 	println!("{:?}", r);
+
+	// Create framebuffer
+	let mut fbo: GLuint = 0;
+	let mut cl: GLuint = 0;
+	
+	unsafe {
+		gl::GenFramebuffers(1, &mut fbo);	
+		gl::BindFramebuffer(gl::FRAMEBUFFER, fbo);
+	
+		gl::GenTextures(1, &mut cl);
+		gl::BindTexture(gl::TEXTURE_2D, cl);
+		
+		gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGB as i32, 1280, 720, 0, gl::RGB, gl::UNSIGNED_BYTE, ::std::ptr::null_mut());
+		
+		gl::TextureParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+		gl::TextureParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+		
+		gl::FramebufferTexture2D(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D, cl, 0);
+	}
 
 	let shader = Shader::new();
 	shader.attach(&read_file_contents("assets/shaders/tri.vs"), gl::VERTEX_SHADER).unwrap();
 	shader.attach(&read_file_contents("assets/shaders/tri.fs"), gl::FRAGMENT_SHADER).unwrap();
 	shader.compile().unwrap();
 	shader.bind();
-
+	
+	let draw_fullscreen = Shader::new();
+	draw_fullscreen.attach(&read_file_contents("assets/shaders/draw_fullscreen.vs"), gl::VERTEX_SHADER).unwrap();
+	draw_fullscreen.attach(&read_file_contents("assets/shaders/draw_fullscreen.fs"), gl::FRAGMENT_SHADER).unwrap();
+	draw_fullscreen.compile().unwrap();
+	draw_fullscreen.bind();
+	
 	// let shader = load_shader(PathBuf::from("assets/shaders/schema.json"));
 
 	let mesh = Mesh::load_ply(PathBuf::from("assets/meshes/cube.ply"));
 	println!("{:?}", mesh);
 
-	let albedo = Texture2D::new(PathBuf::from("assets/textures/harshbricks-albedo.png"), gl::SRGB8);
+	let albedo = Texture2D::new(PathBuf::from("assets/textures/harshbricks-albedo.png"), gl::SRGB8_ALPHA8);
 	let roughness = Texture2D::new(PathBuf::from("assets/textures/harshbricks-roughness.png"), gl::R8);
 	let normal = Texture2D::new(PathBuf::from("assets/textures/harshbricks-normal.png"), gl::RGB8);
-
-	albedo.bind(0);
-	roughness.bind(1);
-	normal.bind(3);
 
     unsafe {
         gl::ClearColor(0.05, 0.05, 0.05, 1.0);
@@ -91,8 +117,14 @@ fn main() {
 			}
 		});
 	}
-
+	
+	let mut last_time = time::Instant::now();
+	
     while !opengl.window.should_close() {
+		let time = time::Instant::now();
+		let delta_time = time.duration_since(last_time).subsec_millis() as f32 / 1000.0;
+		last_time = time;
+		
 		{
 			let mut command_buffer = command_buffer.lock().expect("Failed to get lock on command buffer.");
 			for command in command_buffer.drain(..) {
@@ -114,25 +146,27 @@ fn main() {
 				_ => {}
 			}
 		}
-
+		
+		let movement_speed = 1.0;
+		
 		if opengl.window.get_key(Key::W) == Action::Press {
-			camera.transform.position += camera.transform.forward() * 0.01;
+			camera.transform.position += camera.transform.forward() * movement_speed * delta_time;
 		}
 		if opengl.window.get_key(Key::S) == Action::Press {
-			camera.transform.position += camera.transform.forward() * -0.01;
+			camera.transform.position += camera.transform.forward() *  -movement_speed * delta_time;
 		}
 		if opengl.window.get_key(Key::A) == Action::Press {
-			camera.transform.position += camera.transform.right() * -0.01;
+			camera.transform.position += camera.transform.right() *  -movement_speed * delta_time;
 		}
 		if opengl.window.get_key(Key::D) == Action::Press {
-			camera.transform.position += camera.transform.right() * 0.01;
+			camera.transform.position += camera.transform.right() * movement_speed * delta_time;
 		}
 
 		if opengl.window.get_key(Key::Q) == Action::Press {
-			camera.transform.rotation = camera.transform.rotation * Quaternion::from_angle_y(Deg(-0.1));
+			camera.transform.rotation = camera.transform.rotation * Quaternion::from_angle_y(Deg(-15.0 * delta_time));
 		}
 		if opengl.window.get_key(Key::E) == Action::Press {
-			camera.transform.rotation = camera.transform.rotation * Quaternion::from_angle_y(Deg(0.1));
+			camera.transform.rotation = camera.transform.rotation * Quaternion::from_angle_y(Deg(15.0 * delta_time));
 		}
 
 		shader.setUniform("view", camera.get_view_matrix());
@@ -141,8 +175,20 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
-		// r.draw();
-		mesh.draw();
+		albedo.bind(0);
+		roughness.bind(1);
+		normal.bind(3);
+		shader.bind();
+		unsafe {
+			gl::BindFramebuffer(gl::FRAMEBUFFER, fbo);
+			mesh.draw();
+
+			gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
+			draw_fullscreen.bind();
+			draw_fullscreen.setUniform("projection", Matrix4::from(cgmath::Ortho { left: 0.0, top: 0.0, bottom: 720.0, right: 1280.0, near: 0.0, far: 100.0 }));
+			gl::BindTexture(gl::TEXTURE0, cl);
+			r.draw();
+		}
 
 		opengl.window.swap_buffers();
     }
