@@ -21,8 +21,10 @@ use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
 
-use cgmath::{Vector3, Matrix4, Rad, Deg, PerspectiveFov};
+use cgmath::prelude::*;
+use cgmath::{Vector3, Matrix4, Quaternion, Rad, Deg, PerspectiveFov};
 
+use std::sync::{Mutex, Arc};
 
 
 
@@ -73,16 +75,36 @@ fn main() {
     }
 
 	let mut camera = Camera::new(Transform::default(), PerspectiveFov { fovy: Rad::from(Deg(75.0)), aspect: 1280.0 / 720.0, near: 0.1, far: 100.0 });
-	camera.transform.position.z = 3.0;
+	camera.transform.position.z = -3.0;
 
 	shader.setUniform("model", Matrix4::<f32>::from_translation(Vector3::new(1.0, 0.0, 0.0)));
 	shader.setUniform("perspective", camera.get_projection_matrix());
 
-    let mut running = true;
+	let command_buffer = Arc::new(Mutex::new(Vec::new()));
+	{
+		let command_buffer = command_buffer.clone();
+		let input_thread = ::std::thread::spawn(move || {
+			loop {
+				let mut buffer = String::new();
+				::std::io::stdin().read_line(&mut buffer).expect("Failed to read line from stdin");
+				command_buffer.lock().expect("Failed to get lock on command buffer.").push(buffer);
+			}
+		});
+	}
+
     while !opengl.window.should_close() {
+		{
+			let mut command_buffer = command_buffer.lock().expect("Failed to get lock on command buffer.");
+			for command in command_buffer.drain(..) {
+				println!("{:?}", command.as_str());
+				match command.as_str() {
+					"quit\r\n" => { print!("Shutting down..."); opengl.window.set_should_close(true); }
+					_ => { println!("Unknown command: {}", command); }
+				}
+			}
+		}
+
 		opengl.poll_events();
-
-
 		for(_, event) in glfw::flush_messages(&opengl.events) {
 			match event {
 				glfw::WindowEvent::Close => { opengl.window.set_should_close(true); }
@@ -94,16 +116,23 @@ fn main() {
 		}
 
 		if opengl.window.get_key(Key::W) == Action::Press {
-			camera.transform.position.z += -0.01;
+			camera.transform.position += camera.transform.forward() * 0.01;
 		}
 		if opengl.window.get_key(Key::S) == Action::Press {
-			camera.transform.position.z += 0.01;
+			camera.transform.position += camera.transform.forward() * -0.01;
 		}
 		if opengl.window.get_key(Key::A) == Action::Press {
-			camera.transform.position.x += -0.01;
+			camera.transform.position += camera.transform.right() * -0.01;
 		}
 		if opengl.window.get_key(Key::D) == Action::Press {
-			camera.transform.position.x += 0.01;
+			camera.transform.position += camera.transform.right() * 0.01;
+		}
+
+		if opengl.window.get_key(Key::Q) == Action::Press {
+			camera.transform.rotation = camera.transform.rotation * Quaternion::from_angle_y(Deg(-0.1));
+		}
+		if opengl.window.get_key(Key::E) == Action::Press {
+			camera.transform.rotation = camera.transform.rotation * Quaternion::from_angle_y(Deg(0.1));
 		}
 
 		shader.setUniform("view", camera.get_view_matrix());
