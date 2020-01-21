@@ -16,7 +16,7 @@ uniform mat4 model;
 
 void main() {
 	gl_Position = perspective * view * model * vec4(position, 1.0);
-	frag_position = vec3(position.x, position.y, position.z);
+	frag_position = position.xyz;
 	frag_normal = normalize(normal);
 	uv = _uv;
 

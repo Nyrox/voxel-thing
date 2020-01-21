@@ -1,7 +1,5 @@
 #![feature(ord_max_min)]
 
-#![deny(unused_must_use)]
-
 extern crate cgmath;
 
 pub use self::context::OpenGLContext;
@@ -18,6 +16,7 @@ pub mod texture;
 use std::ffi::CString;
 
 use cgmath::Matrix4;
+use cgmath::Vector3;
 use shader::{Uniform};
 
 
@@ -30,6 +29,26 @@ impl Uniform for Matrix4<f32> {
 			let name = CString::new(id.as_bytes()).unwrap();
 			let location = gl::GetUniformLocation(handle, name.as_ptr());
 			gl::ProgramUniformMatrix4fv(handle, location, 1, gl::FALSE, ::std::mem::transmute(self));
+		}
+	}
+}
+
+impl Uniform for Vector3<f32> {
+	fn set(&self, id: &str, handle: GLuint) {
+		unsafe {
+			let name = CString::new(id.as_bytes()).unwrap();
+			let location = gl::GetUniformLocation(handle, name.as_ptr());
+			gl::ProgramUniformMatrix3fv(handle, location, 1, gl::FALSE, ::std::mem::transmute(self));
+		}
+	}
+}
+
+impl Uniform for i32 {
+	fn set(&self, id: &str, handle: GLuint) {
+		unsafe {
+			let name = CString::new(id.as_bytes()).unwrap();
+			let location = gl::GetUniformLocation(handle, name.as_ptr());
+			gl::ProgramUniform1i(handle, location, *self);
 		}
 	}
 }

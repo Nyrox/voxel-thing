@@ -1,6 +1,7 @@
 use cgmath::prelude::*;
 use cgmath::{Vector3, Vector2};
 
+#[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct Vertex {
 	pub position: Vector3<f32>,

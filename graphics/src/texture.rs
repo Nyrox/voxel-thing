@@ -8,7 +8,7 @@ use std::fmt::{Debug};
 
 use gl::types::*;
 
-pub struct Texture2D {	
+pub struct Texture2D {
 	pub image: Image<u8>,
 	pub format: GLenum,
 	pub handle: GLuint
@@ -28,14 +28,14 @@ impl Texture2D {
 			LoadResult::ImageF32(..) => panic!("Found floating point texture, use Texture2D_HDR instead."),
 			LoadResult::Error(string) => panic!(string)
 		};
-		
+
 		let mut handle = 0;
 		unsafe { gl::CreateTextures(gl::TEXTURE_2D, 1, &mut handle) };
-		
+
 		let obj = Texture2D { image, format, handle };
 		obj.allocate();
-		let pixel_formats = [0, gl::RED, gl::RG, gl::RGB, gl::RGBA];		
-		
+		let pixel_formats = [0, gl::RED, gl::RG, gl::RGB, gl::RGBA];
+
 		unsafe {
 			gl::TextureSubImage2D(obj.handle, 0, 0, 0, obj.image.width as i32, obj.image.height as i32, pixel_formats[obj.image.depth], gl::UNSIGNED_BYTE, obj.image.data.as_ptr() as *const GLvoid);
 			gl::TextureParameteri(handle, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
@@ -46,18 +46,18 @@ impl Texture2D {
 		}
 		obj
 	}
-	
+
 	fn allocate(&self) {
 		unsafe {
 			gl::TextureStorage2D(self.handle, self.get_mipmap_levels(), self.format, self.image.width as i32, self.image.height as i32);
 		}
 	}
-	
+
 	fn get_mipmap_levels(&self) -> i32 {
 		1 + (self.image.width.max(self.image.height) as f32).log2().floor() as i32;
 		1
 	}
-	
+
 	pub fn bind(&self, texture_unit: u32) {
 		unsafe {
 			gl::ActiveTexture(gl::TEXTURE0 + texture_unit);

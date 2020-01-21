@@ -58,23 +58,26 @@ vec3 fresnel(vec3 object_color, vec3 n, vec3 l, float metalness) {
 	return fresnel_schlick(max(dot(n, l), 0.0), F0);
 }
 
+
+uniform int gTime;
+uniform vec3 cameraPos;
+
 void main() {
-	vec3 light_pos = vec3(1.5, 1.5, -2);
-	vec3 light_strength = vec3(8, 8, 8);
+    vec3 camera_pos = cameraPos;
+
+	vec3 light_pos = vec3(sin(gTime / 1000.0) * 3, 1.5, -2);
+	vec3 light_strength = vec3(3, 3, 3);
 	vec3 object_color = texture(t_albedo, uv).rgb;
 	float roughness = texture(t_roughness, uv).r;
 	float metallic = 0;
 
-	vec3 camera_pos = vec3(2.0, 0.5, 3.0);
-
 	vec3 wi = normalize(light_pos - frag_position);
-	vec3 N = normalize(frag_normal);
 
-	//vec3 N_raw = texture(t_normal, uv).rgb;
-	//N_raw = N_raw * 2.0 - 1.0;
-	//vec3 N = normalize(N_raw);
-	//vec3 N = normalize(N_raw);
-	//N = normalize(TBN * N);
+	vec3 N_raw = texture(t_normal, uv).rgb;
+	N_raw = N_raw * 2.0 - 1.0;
+	vec3 N = normalize(N_raw);
+	N = normalize(TBN * N);
+	// N = normalize(frag_normal);
 
 	vec3 V = normalize(camera_pos - frag_position);
 	vec3 H = normalize(wi + V);
@@ -84,8 +87,6 @@ void main() {
 	float cos_theta = max(dot(N, wi), 0.0);
 	float attenuation = 1.0 / (_distance * _distance);
 	vec3 radiance = light_strength * attenuation * cos_theta;
-
-	float NdotL = max(dot(N, wi), 0.0);
 
 
 	vec3 F = fresnel(object_color, N, wi, metallic);
@@ -104,7 +105,6 @@ void main() {
 	vec3 ambient = vec3(0.03) * object_color;
 
 	final = final + ambient;
-	final = pow(final, vec3(1.0 / 2.2));
 
 	out_color = vec4(final, 1.0);
 }

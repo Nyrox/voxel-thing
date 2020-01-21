@@ -38,7 +38,7 @@ impl Mesh {
 
 			gl::BindVertexArray(mesh.vao);
 
-			gl::BindBuffer(gl::ARRAY_BUFFER, mesh.vao);
+			gl::BindBuffer(gl::ARRAY_BUFFER, mesh.vbo);
 			gl::NamedBufferData(mesh.vbo, (mem::size_of::<Vertex>() * vertices.len()) as isize, vertices.as_ptr() as *const GLvoid, gl::STATIC_DRAW);
 
 			gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, mesh.ebo);

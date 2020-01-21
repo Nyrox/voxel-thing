@@ -59,19 +59,35 @@ fn main() {
 	// Create framebuffer
 	let mut fbo: GLuint = 0;
 	let mut cl: GLuint = 0;
-	
+
 	unsafe {
-		gl::GenFramebuffers(1, &mut fbo);	
+		gl::GenFramebuffers(1, &mut fbo);
 		gl::BindFramebuffer(gl::FRAMEBUFFER, fbo);
-	
+
+	// if (depthBuffer) {
+	// 	GLuint rbo;
+	// 	gl::GenRenderbuffers(1, &rbo);
+	// 	gl::BindRenderbuffer(gl::RENDERBUFFER, rbo);
+	// 	gl::RenderbufferStorage(gl::RENDERBUFFER, gl::DEPTH24_STENCIL8, size.x, size.y);
+	// 	gl::BindRenderbuffer(gl::RENDERBUFFER, 0);
+	// 	gl::FramebufferRenderbuffer(gl::FRAMEBUFFER, gl::DEPTH_STENCIL_ATTACHMENT, gl::RENDERBUFFER, rbo);
+	// }
+
+		let mut rbo = 0;
+		gl::GenRenderbuffers(1, &mut rbo);
+		gl::BindRenderbuffer(gl::RENDERBUFFER, rbo);
+		gl::RenderbufferStorage(gl::RENDERBUFFER, gl::DEPTH24_STENCIL8, 1280, 720);
+		gl::BindRenderbuffer(gl::RENDERBUFFER, 0);
+		gl::FramebufferRenderbuffer(gl::FRAMEBUFFER, gl::DEPTH_STENCIL_ATTACHMENT, gl::RENDERBUFFER, rbo);
+
 		gl::GenTextures(1, &mut cl);
 		gl::BindTexture(gl::TEXTURE_2D, cl);
-		
+
 		gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGB as i32, 1280, 720, 0, gl::RGB, gl::UNSIGNED_BYTE, ::std::ptr::null_mut());
-		
-		gl::TextureParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
-		gl::TextureParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
-		
+
+		gl::TextureParameteri(cl, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
+		gl::TextureParameteri(cl, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
+
 		gl::FramebufferTexture2D(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D, cl, 0);
 	}
 
@@ -80,13 +96,13 @@ fn main() {
 	shader.attach(&read_file_contents("assets/shaders/tri.fs"), gl::FRAGMENT_SHADER).unwrap();
 	shader.compile().unwrap();
 	shader.bind();
-	
+
 	let draw_fullscreen = Shader::new();
 	draw_fullscreen.attach(&read_file_contents("assets/shaders/draw_fullscreen.vs"), gl::VERTEX_SHADER).unwrap();
 	draw_fullscreen.attach(&read_file_contents("assets/shaders/draw_fullscreen.fs"), gl::FRAGMENT_SHADER).unwrap();
 	draw_fullscreen.compile().unwrap();
 	draw_fullscreen.bind();
-	
+
 	// let shader = load_shader(PathBuf::from("assets/shaders/schema.json"));
 
 	let mesh = Mesh::load_ply(PathBuf::from("assets/meshes/cube.ply"));
@@ -95,10 +111,6 @@ fn main() {
 	let albedo = Texture2D::new(PathBuf::from("assets/textures/harshbricks-albedo.png"), gl::SRGB8_ALPHA8);
 	let roughness = Texture2D::new(PathBuf::from("assets/textures/harshbricks-roughness.png"), gl::R8);
 	let normal = Texture2D::new(PathBuf::from("assets/textures/harshbricks-normal.png"), gl::RGB8);
-
-    unsafe {
-        gl::ClearColor(0.05, 0.05, 0.05, 1.0);
-    }
 
 	let mut camera = Camera::new(Transform::default(), PerspectiveFov { fovy: Rad::from(Deg(75.0)), aspect: 1280.0 / 720.0, near: 0.1, far: 100.0 });
 	camera.transform.position.z = -3.0;
@@ -117,14 +129,15 @@ fn main() {
 			}
 		});
 	}
-	
+
 	let mut last_time = time::Instant::now();
-	
+	let mut total_time = 0.0;
     while !opengl.window.should_close() {
 		let time = time::Instant::now();
 		let delta_time = time.duration_since(last_time).subsec_millis() as f32 / 1000.0;
+		total_time += delta_time * 1000.0;
 		last_time = time;
-		
+
 		{
 			let mut command_buffer = command_buffer.lock().expect("Failed to get lock on command buffer.");
 			for command in command_buffer.drain(..) {
@@ -146,9 +159,9 @@ fn main() {
 				_ => {}
 			}
 		}
-		
+
 		let movement_speed = 1.0;
-		
+
 		if opengl.window.get_key(Key::W) == Action::Press {
 			camera.transform.position += camera.transform.forward() * movement_speed * delta_time;
 		}
@@ -171,22 +184,35 @@ fn main() {
 
 		shader.setUniform("view", camera.get_view_matrix());
 
-        unsafe {
-            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-        }
+
 
 		albedo.bind(0);
 		roughness.bind(1);
 		normal.bind(3);
 		shader.bind();
+		shader.setUniform("gTime", total_time as i32);
+		shader.setUniform("cameraPos", camera.transform.position.to_homogeneous().truncate());
 		unsafe {
 			gl::BindFramebuffer(gl::FRAMEBUFFER, fbo);
+		    unsafe {
+				gl::ClearColor(0.0, 0.0, 0.0, 1.0);
+            	gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+				gl::Enable(gl::DEPTH_TEST);
+				gl::DepthFunc(gl::LESS);
+        	}
+
 			mesh.draw();
 
 			gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
+			unsafe {
+            	gl::Clear(gl::COLOR_BUFFER_BIT);
+				gl::Disable(gl::DEPTH_TEST);
+        	}
+
 			draw_fullscreen.bind();
-			draw_fullscreen.setUniform("projection", Matrix4::from(cgmath::Ortho { left: 0.0, top: 0.0, bottom: 720.0, right: 1280.0, near: 0.0, far: 100.0 }));
-			gl::BindTexture(gl::TEXTURE0, cl);
+			draw_fullscreen.setUniform("projection", Matrix4::from(cgmath::Ortho { left: 0.0, top: 0.0, bottom: 720.0, right: 1280.0, near: 0.1, far: 100.0 }));
+			gl::ActiveTexture(gl::TEXTURE0);
+			gl::BindTexture(gl::TEXTURE_2D, cl);
 			r.draw();
 		}
 
