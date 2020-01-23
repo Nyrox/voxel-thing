@@ -40,8 +40,8 @@ impl Texture2D {
 			gl::TextureSubImage2D(obj.handle, 0, 0, 0, obj.image.width as i32, obj.image.height as i32, pixel_formats[obj.image.depth], gl::UNSIGNED_BYTE, obj.image.data.as_ptr() as *const GLvoid);
 			gl::TextureParameteri(handle, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
 			gl::TextureParameteri(handle, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
-			gl::TextureParameteri(handle, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as i32);
-			gl::TextureParameteri(handle, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+			gl::TextureParameteri(handle, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
+			gl::TextureParameteri(handle, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
 			gl::GenerateTextureMipmap(obj.handle);
 		}
 		obj

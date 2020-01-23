@@ -127,6 +127,7 @@ fn main() {
 	let voxelshade = Shader::new();
 	voxelshade.attach(&read_file_contents("assets/shaders/voxel.vs"), gl::VERTEX_SHADER).unwrap();
 	voxelshade.attach(&read_file_contents("assets/shaders/voxel.fs"), gl::FRAGMENT_SHADER).unwrap();
+	voxelshade.attach(&read_file_contents("assets/shaders/voxel.gs"), gl::GEOMETRY_SHADER).unwrap();
 	voxelshade.compile().unwrap();
 	voxelshade.bind();
 
@@ -166,6 +167,11 @@ fn main() {
 
 	let mesh = Mesh::load_ply(PathBuf::from("assets/meshes/cube.ply"));
 	println!("{:?}", mesh);
+
+	let dirt = Texture2D::new(
+		PathBuf::from("assets/textures/dirt.jpg"),
+		gl::SRGB8,
+	);
 
 	let albedo = Texture2D::new(
 		PathBuf::from("assets/textures/harshbricks-albedo.png"),
@@ -231,8 +237,8 @@ fn main() {
 		where
 			F: FnMut((u32, u32, u32), &mut Voxel),
 		{
-			for z in 0..CHUNK_HEIGHT {
-				for y in 0..CHUNK_DIM {
+			for z in 0..CHUNK_DIM {
+				for y in 0..CHUNK_HEIGHT {
 					for x in 0..CHUNK_DIM {
 						f((x, y, z), self.voxel_mut(x, y, z))
 					}
@@ -244,8 +250,8 @@ fn main() {
 		where
 			F: Fn((u32, u32, u32), &Voxel),
 		{
-			for z in 0..CHUNK_HEIGHT {
-				for y in 0..CHUNK_DIM {
+			for z in 0..CHUNK_DIM {
+				for y in 0..CHUNK_HEIGHT {
 					for x in 0..CHUNK_DIM {
 						f((x, y, z), self.voxel(x, y, z))
 					}
@@ -428,6 +434,12 @@ fn main() {
 		if opengl.window.get_key(Key::D) == Action::Press {
 			camera.transform.position += camera.transform.right() * movement_speed * delta_time;
 		}
+		if opengl.window.get_key(Key::Space) == Action::Press {
+			camera.transform.position += camera.transform.up() * movement_speed * delta_time;
+		}
+		if opengl.window.get_key(Key::LeftShift) == Action::Press {
+			camera.transform.position += camera.transform.down() * movement_speed * delta_time;
+		}
 
 		if opengl.window.get_key(Key::Q) == Action::Press {
 			camera.transform.rotation =
@@ -480,9 +492,10 @@ fn main() {
 			voxelshade.bind();
 			voxelshade.setUniform("projection", camera.get_projection_matrix());
 			voxelshade.setUniform("view", camera.get_view_matrix());
-
-			gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
-
+			voxelshade.setUniform("cameraPos", camera.transform.position.to_homogeneous().truncate());
+			voxelshade.setUniform("gTime", total_time as i32);
+			// gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+			dirt.bind(0);
 
 			gl::BindVertexArray(chunk_vao);
 			gl::DrawElements(
