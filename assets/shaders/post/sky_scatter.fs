@@ -141,9 +141,9 @@ void main ()
 	vec2 duv = uv * 2.0 - 1.0; // [[0, 0], [1, 1]] -> [[-1, -1], [1, 1]]
 	duv = tan(FOV * 0.5) * duv;
 
-	vec4 ray_clip = vec4(duv, -1.0, 1.0);
+	vec4 ray_clip = vec4(duv, 1.0, 1.0);
 	vec4 ray_eye = inverseProj * ray_clip;
-	ray_eye = vec4(ray_eye.xy, -1.0, 0.0);
+	ray_eye = vec4(ray_eye.xy, 1.0, 0.0);
 	vec3 ray_wor = (inverseView * ray_eye).xyz;
 	vec3 direction = normalize(ray_wor);
 

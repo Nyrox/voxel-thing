@@ -2,6 +2,7 @@ use cgmath::prelude::*;
 use cgmath::Deg;
 use cgmath::{Point3, Quaternion, Vector3};
 
+#[derive(Debug, Clone)]
 pub struct Transform {
     pub position: Point3<f32>,
     pub rotation: Quaternion<f32>,

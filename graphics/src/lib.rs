@@ -17,6 +17,7 @@ use std::ffi::CString;
 
 use cgmath::Matrix4;
 use cgmath::Vector3;
+use cgmath::Vector2;
 use shader::Uniform;
 
 extern crate gl;
@@ -46,6 +47,16 @@ impl Uniform for Vector3<f32> {
             gl::ProgramUniform3fv(handle, location, 1, ::std::mem::transmute(self));
         }
     }
+}
+
+impl Uniform for Vector2<i32> {
+	fn set(&self, id: &str, handle: GLuint) {
+		unsafe {
+			let name = CString::new(id.as_bytes()).unwrap();
+			let location = gl::GetUniformLocation(handle, name.as_ptr());
+			gl::ProgramUniform2iv(handle, location, 1, ::std::mem::transmute(self));
+		}
+	}
 }
 
 impl Uniform for i32 {
