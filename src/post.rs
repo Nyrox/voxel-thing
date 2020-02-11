@@ -103,7 +103,10 @@ pub fn scatter_sky(scatter: &SkyScatterShader, camera: &Camera, gTime: i32) {
         .setUniform("nearPlane", camera.projection.near);
     scatter.shader.setUniform("farPlane", camera.projection.far);
     scatter.shader.setUniform("iTime", gTime);
-	scatter.shader.setUniform("cameraPosition", camera.transform.position.to_homogeneous().truncate());
+    scatter.shader.setUniform(
+        "cameraPosition",
+        camera.transform.position.to_homogeneous().truncate(),
+    );
     unsafe {
         gl::BindVertexArray(scatter.vao);
         gl::DrawArrays(gl::TRIANGLES, 0, 6);

@@ -43,12 +43,7 @@ impl Uniform for Vector3<f32> {
         unsafe {
             let name = CString::new(id.as_bytes()).unwrap();
             let location = gl::GetUniformLocation(handle, name.as_ptr());
-            gl::ProgramUniform3fv(
-                handle,
-                location,
-                1,
-                ::std::mem::transmute(self),
-            );
+            gl::ProgramUniform3fv(handle, location, 1, ::std::mem::transmute(self));
         }
     }
 }

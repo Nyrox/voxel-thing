@@ -1,4 +1,5 @@
 use cgmath::prelude::*;
+use cgmath::Deg;
 use cgmath::{Point3, Quaternion, Vector3};
 
 pub struct Transform {
@@ -10,7 +11,7 @@ impl Default for Transform {
     fn default() -> Transform {
         Transform {
             position: Point3::new(0.0, 0.0, 0.0),
-            rotation: Quaternion::from_sv(0.0, Vector3::new(0.0, 0.0, 1.0)),
+            rotation: Quaternion::from_angle_x(Deg(0.0)),
         }
     }
 }

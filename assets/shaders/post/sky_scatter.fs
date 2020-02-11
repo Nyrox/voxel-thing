@@ -24,7 +24,7 @@ vec2 totalDepthRM;
     // const float earthRadius = 6360e3;
     // const float atmosphereRadius = 6380e3;
 	const float earthRadius = 0;
-	const float atmosphereRadius = 20e3;
+	const float atmosphereRadius = 50e3;
 	const float hRay = 17e3;
 	const float hMie = 12e2;
 
@@ -162,7 +162,6 @@ void main ()
     vec3 origin = cameraPosition;
 
 	vec3 col = texture(color, uv).rgb;
-	float L = texture(depth, uv).r;
 
 	float sampledDepth = texture(depth, uv).r;
 	float realDepth = sampledDepth * (farPlane - nearPlane) + nearPlane;

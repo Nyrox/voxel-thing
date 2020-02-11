@@ -100,10 +100,18 @@ fn main() {
             gl::FLOAT,
             ptr::null_mut(),
         );
-		gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
-		gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
-		gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_BORDER as i32);
-		gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_BORDER as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+        gl::TexParameteri(
+            gl::TEXTURE_2D,
+            gl::TEXTURE_WRAP_S,
+            gl::CLAMP_TO_BORDER as i32,
+        );
+        gl::TexParameteri(
+            gl::TEXTURE_2D,
+            gl::TEXTURE_WRAP_T,
+            gl::CLAMP_TO_BORDER as i32,
+        );
         gl::FramebufferTexture2D(
             gl::FRAMEBUFFER,
             gl::DEPTH_ATTACHMENT,
@@ -454,6 +462,8 @@ fn main() {
     let mut chunk = Chunk::gen_flat(32);
     let (chunk_vao, chunk_indices_len) = chunk.gen_vertex_array();
 
+    camera.transform.position.y = 0.0;
+
     let command_buffer = Arc::new(Mutex::new(Vec::new()));
     {
         let command_buffer = command_buffer.clone();
@@ -478,6 +488,7 @@ fn main() {
         let delta_time = time.duration_since(last_time).subsec_millis() as f32 / 1000.0;
         total_time += delta_time * 1000.0;
         last_time = time;
+
 
         {
             let mut command_buffer = command_buffer
@@ -533,11 +544,22 @@ fn main() {
 
         if opengl.window.get_key(Key::Q) == Action::Press {
             camera.transform.rotation =
-                camera.transform.rotation * Quaternion::from_angle_y(Deg(-15.0 * delta_time));
+                Quaternion::from_angle_y(Deg(-15.0 * delta_time)) * camera.transform.rotation;
         }
         if opengl.window.get_key(Key::E) == Action::Press {
             camera.transform.rotation =
-                camera.transform.rotation * Quaternion::from_angle_y(Deg(15.0 * delta_time));
+                Quaternion::from_angle_y(Deg(15.0 * delta_time)) * camera.transform.rotation;
+        }
+        if opengl.window.get_key(Key::Y) == Action::Press {
+            camera.transform.rotation =
+                // Quaternion::from_axis_angle(Vector3::new(1.0, 0.0, 0.0), Deg(15.0 * delta_time))
+				Quaternion::from_angle_x(Deg(15.0 * delta_time))
+
+				* camera.transform.rotation;
+        }
+        if opengl.window.get_key(Key::X) == Action::Press {
+            camera.transform.rotation =
+                Quaternion::from_angle_x(Deg(-15.0 * delta_time)) * camera.transform.rotation;
         }
 
         shader.setUniform("view", camera.get_view_matrix());

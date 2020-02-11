@@ -1,3 +1,4 @@
+use cgmath::Rotation;
 use cgmath::{Matrix4, PerspectiveFov, Vector3, Vector4};
 use transform::Transform;
 
@@ -16,13 +17,18 @@ impl Camera {
 
     pub fn get_view_matrix(&self) -> Matrix4<f32> {
         Matrix4::look_at_dir(
-            self.transform.position,
-            (Matrix4::from(self.transform.rotation) * Vector4::new(0.0, 0.0, 1.0, 0.0)).truncate(),
-            Vector3::new(0.0, 1.0, 0.0),
-        )
+                self.transform.position,
+                self.transform
+                    .rotation
+                    .rotate_vector(Vector3::new(0.0, 0.0, 1.0)),
+                Vector3::new(0.0, 1.0, 0.0),
+            )
     }
 
     pub fn get_projection_matrix(&self) -> Matrix4<f32> {
-        Matrix4::from(self.projection)
+        let mut m = Matrix4::from(self.projection);
+		m = Matrix4::from_nonuniform_scale(-1.0, -1.0, 1.0) * m;
+		// m[3][3] *= -1.0;
+		m
     }
 }
