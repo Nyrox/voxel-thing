@@ -201,9 +201,13 @@ fn main() {
 
     let mut world = World::empty();
     world.insert_chunk((0, 0), Chunk::gen_flat(32));
-	world.insert_chunk((1, 0), Chunk::gen_flat(29));
-	world.insert_chunk((1, 1), Chunk::gen_flat(34));
-	world.insert_chunk((0, 1), Chunk::gen_flat(27));
+    world.insert_chunk((1, 0), Chunk::gen_flat(29));
+    world.insert_chunk((1, 1), Chunk::gen_flat(34));
+    world.insert_chunk((0, 1), Chunk::gen_flat(27));
+    world.insert_chunk((-1, 0), Chunk::gen_flat(29));
+    world.insert_chunk((-1, -1), Chunk::gen_flat(34));
+    world.insert_chunk((0, -1), Chunk::gen_flat(27));
+
 
     let command_buffer = Arc::new(Mutex::new(Vec::new()));
     {
@@ -310,7 +314,15 @@ fn main() {
 
         // physics
 
+        const gravity: f32 = -1.0;
+
+        velocity += delta_time * gravity * Vector3::new(0.0, 1.0, 0.0);
         camera.transform.position += velocity;
+
+        // collision
+        let voxel_coords = world.voxel_from_world(camera.transform.position);
+
+        if world.voxel(voxel_coords).is_solid() {}
 
         renderer.camera = camera.clone();
 

@@ -5,18 +5,43 @@ pub use chunk::Chunk;
 pub use voxel::{Voxel, VoxelType};
 
 use cgmath::Vector2;
+use cgmath::Vector3;
 
 use std::fs::File;
 use std::io::prelude::*;
 
-
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ChunkIndex(Vector2<i32>);
 
 impl Into<ChunkIndex> for (i32, i32) {
     fn into(self) -> ChunkIndex {
         let (x, z) = self;
         ChunkIndex(Vector2::new(x, z))
+    }
+}
+
+impl ChunkIndex {
+    pub fn chunk_origin(self) -> Vector3<i32> {
+        Vector3::new(
+            self.0.x * chunk::CHUNK_DIM as i32,
+            0,self.0.y * chunk::CHUNK_DIM as i32,
+        )
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct VoxelIndex(Vector3<i32>);
+
+impl VoxelIndex {
+    pub fn chunk_index(&self) -> ChunkIndex {
+        ChunkIndex(Vector2::new(
+            ((self.0.x) / chunk::CHUNK_DIM as i32) - self.0.x.is_negative() as i32,
+            ((self.0.z) / chunk::CHUNK_DIM as i32) - self.0.z.is_negative() as i32,
+        ))
+    }
+
+    pub fn local_part(&self) -> Vector3<i32> {
+        self.0 - self.chunk_index().chunk_origin()
     }
 }
 
@@ -76,7 +101,7 @@ impl WorldRenderer {
 
     pub fn draw_chunk(&self, i: ChunkIndex, renderdata: ChunkRenderdata) {
         self.voxel_shader.bind();
-		self.voxel_shader
+        self.voxel_shader
             .setUniform("view", self.camera.get_view_matrix());
         self.voxel_shader.setUniform(
             "cameraPos",
@@ -85,8 +110,11 @@ impl WorldRenderer {
         self.voxel_shader
             .setUniform("projection", self.camera.get_projection_matrix());
         self.voxel_shader.setUniform("gTime", 0i32);
-		self.voxel_shader.setUniform("chunkIndex", i.0);
-		self.voxel_shader.setUniform("chunkDims", Vector2::new(chunk::CHUNK_DIM as i32, chunk::CHUNK_DIM as i32));
+        self.voxel_shader.setUniform("chunkIndex", i.0);
+        self.voxel_shader.setUniform(
+            "chunkDims",
+            Vector2::new(chunk::CHUNK_DIM as i32, chunk::CHUNK_DIM as i32),
+        );
 
         unsafe {
             gl::BindVertexArray(renderdata.vao);
@@ -118,21 +146,97 @@ impl World {
             .push((i.into(), chunk, ChunkRenderdata::default()));
     }
 
+    pub fn voxel_from_world(&self, world: cgmath::Point3<f32>) -> VoxelIndex {
+        VoxelIndex(Vector3::new(world.x as i32, world.y as i32, world.z as i32))
+    }
+
+    pub fn chunk(&self, chunkIndex: ChunkIndex) -> &Chunk {
+        for (index, chunk, _) in self.chunks.iter() {
+            if *index == chunkIndex {
+                return chunk;
+            }
+        }
+
+        panic!("God help us")
+    }
+
+    pub fn voxel(&self, index: VoxelIndex) -> Voxel {
+        let i = index.local_part();
+        *self
+            .chunk(index.chunk_index())
+            .voxel(i.x as u32, i.y as u32, i.z as u32)
+    }
+
     pub fn render(&mut self, renderer: &WorldRenderer) {
-		unsafe {
+        unsafe {
             gl::Enable(gl::DEPTH_TEST);
             gl::DepthFunc(gl::LESS);
             gl::Enable(gl::BLEND);
             gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
-		}
+        }
 
         for (i, chunk, renderdata) in &mut self.chunks {
             if chunk.dirty {
                 *renderdata = ChunkRenderdata::from_vao_handle(chunk.gen_vertex_array());
-				chunk.dirty = false;
-			}
+                chunk.dirty = false;
+            }
 
             renderer.draw_chunk(*i, *renderdata);
+        }
+    }
+}
+
+mod tests {
+    use super::*;
+
+    #[test]
+    pub fn voxel_to_chunk_index() {
+        let samples = [
+            (
+                VoxelIndex(Vector3::new(0, 0, 0)),
+                ChunkIndex(Vector2::new(0, 0)),
+            ),
+            (
+                VoxelIndex(Vector3::new(-1, 0, -1)),
+                ChunkIndex(Vector2::new(-1, -1)),
+            ),
+            (
+                VoxelIndex(Vector3::new(chunk::CHUNK_DIM as i32, 0, -1)),
+                ChunkIndex(Vector2::new(1, -1)),
+            ),
+            (
+                VoxelIndex(Vector3::new(chunk::CHUNK_DIM as i32 * 4, 0, 0)),
+                ChunkIndex(Vector2::new(4, 0)),
+            ),
+            (
+                VoxelIndex(Vector3::new(chunk::CHUNK_DIM as i32 * -4, 0, 0)),
+                ChunkIndex(Vector2::new(-5, 0)),
+            ),
+            (
+                VoxelIndex(Vector3::new(0, 0, chunk::CHUNK_DIM as i32 * -3)),
+                ChunkIndex(Vector2::new(0, -4)),
+            ),
+        ];
+
+        for (sample, predicate) in samples.iter() {
+            assert_eq!(sample.chunk_index(), *predicate);
+        }
+    }
+
+    #[test]
+    pub fn voxel_index_local_part() {
+        let samples = [
+            (VoxelIndex(Vector3::new(0, 0, 0)), Vector3::new(0, 0, 0)),
+            (VoxelIndex(Vector3::new(5, 3, 7)), Vector3::new(5, 3, 7)),
+            (
+                VoxelIndex(Vector3::new(-3, 2, -4)),
+                Vector3::new(chunk::CHUNK_DIM as i32 - 3, 2, chunk::CHUNK_DIM as i32 - 4),
+            ),
+            (VoxelIndex(Vector3::new(0, 0, 0)), Vector3::new(0, 0, 0)),
+        ];
+
+        for (sample, predicate) in samples.iter() {
+            assert_eq!(sample.local_part(), *predicate);
         }
     }
 }

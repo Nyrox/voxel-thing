@@ -69,7 +69,7 @@ impl Chunk {
     }
 
     pub fn voxel(&self, x: u32, y: u32, z: u32) -> &Voxel {
-        &self.voxels[(z + y * CHUNK_HEIGHT * CHUNK_DIM + x * CHUNK_DIM) as usize]
+        &self.voxels[(z + y * CHUNK_DIM * CHUNK_DIM + x * CHUNK_DIM) as usize]
     }
 
     pub fn gen_flat(ground: u32) -> Chunk {

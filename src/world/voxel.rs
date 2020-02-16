@@ -15,4 +15,11 @@ impl Voxel {
             voxel_type: VoxelType::VOID,
         }
     }
+
+    pub fn is_solid(self) -> bool {
+        match self.voxel_type {
+            VoxelType::VOID => false,
+            _ => true,
+        }
+    }
 }
