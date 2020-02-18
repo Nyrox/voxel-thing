@@ -9,6 +9,7 @@ use cgmath::Vector3;
 
 use std::fs::File;
 use std::io::prelude::*;
+use cgmath::num_traits::Signed;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ChunkIndex(Vector2<i32>);
@@ -24,7 +25,8 @@ impl ChunkIndex {
     pub fn chunk_origin(self) -> Vector3<i32> {
         Vector3::new(
             self.0.x * chunk::CHUNK_DIM as i32,
-            0,self.0.y * chunk::CHUNK_DIM as i32,
+            0,
+            self.0.y * chunk::CHUNK_DIM as i32,
         )
     }
 }
@@ -144,10 +146,12 @@ impl World {
     {
         self.chunks
             .push((i.into(), chunk, ChunkRenderdata::default()));
-    }
+	}
 
     pub fn voxel_from_world(&self, world: cgmath::Point3<f32>) -> VoxelIndex {
-        VoxelIndex(Vector3::new(world.x as i32, world.y as i32, world.z as i32))
+        VoxelIndex(Vector3::new(world.x as i32 - world.x.is_negative() as i32
+		, world.y as i32 - world.y.is_negative() as i32,
+		 world.z as i32 - world.z.is_negative() as i32))
     }
 
     pub fn chunk(&self, chunkIndex: ChunkIndex) -> &Chunk {

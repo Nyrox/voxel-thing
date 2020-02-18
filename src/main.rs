@@ -208,7 +208,6 @@ fn main() {
     world.insert_chunk((-1, -1), Chunk::gen_flat(34));
     world.insert_chunk((0, -1), Chunk::gen_flat(27));
 
-
     let command_buffer = Arc::new(Mutex::new(Vec::new()));
     {
         let command_buffer = command_buffer.clone();
@@ -270,19 +269,27 @@ fn main() {
             }
         }
 
-        let movement_speed = 1.0;
+        let movement_speed = 15.0;
+        let movement_cap = 2.0;
+
+        let mut input_x = false;
+        let mut input_z = false;
 
         if opengl.window.get_key(Key::W) == Action::Press {
-            camera.transform.position += camera.transform.forward() * movement_speed * delta_time;
+            velocity += camera.transform.forward() * movement_speed * delta_time;
+            input_z = true;
         }
         if opengl.window.get_key(Key::S) == Action::Press {
-            camera.transform.position += camera.transform.forward() * -movement_speed * delta_time;
+            velocity += camera.transform.forward() * -movement_speed * delta_time;
+            input_z = true;
         }
         if opengl.window.get_key(Key::A) == Action::Press {
-            camera.transform.position += camera.transform.right() * -movement_speed * delta_time;
+            velocity += camera.transform.right() * -movement_speed * delta_time;
+            input_x = true;
         }
         if opengl.window.get_key(Key::D) == Action::Press {
-            camera.transform.position += camera.transform.right() * movement_speed * delta_time;
+            velocity += camera.transform.right() * movement_speed * delta_time;
+            input_x = true;
         }
         if opengl.window.get_key(Key::Space) == Action::Press {
             camera.transform.position += camera.transform.up() * movement_speed * delta_time;
@@ -291,13 +298,40 @@ fn main() {
             camera.transform.position += camera.transform.down() * movement_speed * delta_time;
         }
 
+        {
+            let fwd = velocity.mul_element_wise(Vector3::new(1.0, 0.0, 0.0));
+            let rgt = velocity.mul_element_wise(Vector3::new(0.0, 0.0, 1.0));
+
+			let fwd = if fwd.magnitude() < 0.000000001 {
+				Vector3::zero()
+			}	else {
+				fwd.normalize() * fwd.magnitude().min(movement_cap)
+			};
+
+
+			let rgt = if rgt.magnitude() < 0.000000001 {
+				Vector3::zero()
+			}	else {
+				rgt.normalize() * rgt.magnitude().min(movement_cap)
+			};
+
+            velocity = fwd + rgt
+                + Vector3::new(0.0, velocity.y, 0.0);
+        }
+
+        // if !input_z {
+        //     velocity -= 0.3 * velocity.mul_element_wise(camera.transform.forward());
+        // }
+        // if !input_x {
+        //     velocity -= 0.3 * velocity.mul_element_wise(camera.transform.right());
+        // }
         if opengl.window.get_key(Key::Q) == Action::Press {
             camera.transform.rotation =
-                Quaternion::from_angle_y(Deg(-15.0 * delta_time)) * camera.transform.rotation;
+                Quaternion::from_angle_y(Deg(-30.0 * delta_time)) * camera.transform.rotation;
         }
         if opengl.window.get_key(Key::E) == Action::Press {
             camera.transform.rotation =
-                Quaternion::from_angle_y(Deg(15.0 * delta_time)) * camera.transform.rotation;
+                Quaternion::from_angle_y(Deg(30.0 * delta_time)) * camera.transform.rotation;
         }
         if opengl.window.get_key(Key::Y) == Action::Press {
             camera.transform.rotation = Quaternion::from_axis_angle(camera.transform.right(), Deg(15.0 * delta_time))
@@ -314,15 +348,47 @@ fn main() {
 
         // physics
 
-        const gravity: f32 = -1.0;
+        const gravity: f32 = -9.810;
 
         velocity += delta_time * gravity * Vector3::new(0.0, 1.0, 0.0);
-        camera.transform.position += velocity;
+        camera.transform.position.y -= 1.0;
 
-        // collision
-        let voxel_coords = world.voxel_from_world(camera.transform.position);
+        // x
+        {
+            camera.transform.position.x += velocity.x * delta_time;
+            let voxel_coords = world.voxel_from_world(camera.transform.position);
 
-        if world.voxel(voxel_coords).is_solid() {}
+            if world.voxel(voxel_coords).is_solid() {
+                camera.transform.position.x -= velocity.x * delta_time;
+                velocity.x = 0.0;
+                dbg!("Collision X");
+            }
+        }
+
+        // y
+        {
+            camera.transform.position.y += velocity.y * delta_time;
+            let voxel_coords = world.voxel_from_world(camera.transform.position);
+
+            if world.voxel(voxel_coords).is_solid() {
+                camera.transform.position.y -= velocity.y * delta_time;
+                velocity.y = 0.0;
+                // dbg!("Collision Y");
+            }
+        }
+
+        // y
+        {
+            camera.transform.position.z += velocity.z * delta_time;
+            let voxel_coords = world.voxel_from_world(camera.transform.position);
+
+            if world.voxel(voxel_coords).is_solid() {
+                camera.transform.position.z -= velocity.z * delta_time;
+                velocity.z = 0.0;
+                dbg!("Collision Z");
+            }
+        }
+        camera.transform.position.y += 1.0;
 
         renderer.camera = camera.clone();
 
