@@ -187,7 +187,7 @@ fn main() {
             fovy: Rad::from(Deg(75.0)),
             aspect: 1280.0 / 720.0,
             near: 0.1,
-            far: 100.0,
+            far: 1000.0,
         },
     );
     camera.transform.position.z = -3.0;
@@ -282,7 +282,8 @@ fn main() {
             input_x = true;
         }
         if opengl.window.get_key(Key::Space) == Action::Press {
-            camera.transform.position += camera.transform.up() * movement_speed * delta_time;
+            // camera.transform.position += camera.transform.up() * movement_speed * delta_time;
+            velocity.y = 10.0;
         }
         if opengl.window.get_key(Key::LeftShift) == Action::Press {
             camera.transform.position += camera.transform.down() * movement_speed * delta_time;
@@ -292,21 +293,19 @@ fn main() {
             let fwd = velocity.mul_element_wise(Vector3::new(1.0, 0.0, 0.0));
             let rgt = velocity.mul_element_wise(Vector3::new(0.0, 0.0, 1.0));
 
-			let fwd = if fwd.magnitude() < 0.000000001 {
-				Vector3::zero()
-			}	else {
-				fwd.normalize() * fwd.magnitude().min(movement_cap)
-			};
+            let fwd = if fwd.magnitude() < 0.000000001 {
+                Vector3::zero()
+            } else {
+                fwd.normalize() * fwd.magnitude().min(movement_cap)
+            };
 
+            let rgt = if rgt.magnitude() < 0.000000001 {
+                Vector3::zero()
+            } else {
+                rgt.normalize() * rgt.magnitude().min(movement_cap)
+            };
 
-			let rgt = if rgt.magnitude() < 0.000000001 {
-				Vector3::zero()
-			}	else {
-				rgt.normalize() * rgt.magnitude().min(movement_cap)
-			};
-
-            velocity = fwd + rgt
-                + Vector3::new(0.0, velocity.y, 0.0);
+            velocity = fwd + rgt + Vector3::new(0.0, velocity.y, 0.0);
         }
 
         // if !input_z {

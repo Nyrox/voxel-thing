@@ -9,9 +9,9 @@ pub use voxel::{Voxel, VoxelType};
 use cgmath::Vector2;
 use cgmath::Vector3;
 
+use cgmath::num_traits::Signed;
 use std::fs::File;
 use std::io::prelude::*;
-use cgmath::num_traits::Signed;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ChunkIndex(Vector2<i32>);
@@ -37,6 +37,10 @@ impl ChunkIndex {
 pub struct VoxelIndex(Vector3<i32>);
 
 impl VoxelIndex {
+    pub fn new(x: i32, y: i32, z: i32) -> Self {
+        VoxelIndex(Vector3::new(x, y, z))
+    }
+
     pub fn chunk_index(&self) -> ChunkIndex {
         ChunkIndex(Vector2::new(
             ((self.0.x) / chunk::CHUNK_DIM as i32) - self.0.x.is_negative() as i32,
@@ -46,6 +50,14 @@ impl VoxelIndex {
 
     pub fn local_part(&self) -> Vector3<i32> {
         self.0 - self.chunk_index().chunk_origin()
+    }
+
+    pub fn from_world(world: cgmath::Point3<f32>) -> VoxelIndex {
+        VoxelIndex(Vector3::new(
+            world.x as i32 - world.x.is_negative() as i32,
+            world.y as i32 - world.y.is_negative() as i32,
+            world.z as i32 - world.z.is_negative() as i32,
+        ))
     }
 }
 
@@ -133,7 +145,6 @@ impl WorldRenderer {
     }
 }
 
-
 pub struct World {
     pub chunks: Vec<(ChunkIndex, Chunk, ChunkRenderdata)>,
     generator: gen::WorldGenerator,
@@ -141,7 +152,10 @@ pub struct World {
 
 impl World {
     pub fn empty() -> World {
-        World { chunks: Vec::new(), generator: gen::WorldGenerator::new(), }
+        World {
+            chunks: Vec::new(),
+            generator: gen::WorldGenerator::new(),
+        }
     }
 
     pub fn insert_chunk<C>(&mut self, i: C, chunk: Chunk)
@@ -151,9 +165,9 @@ impl World {
         self.chunks
             .push((i.into(), chunk, ChunkRenderdata::default()));
     }
-    
-    pub fn gen_chunk<C>(&mut self, i: C) 
-    where 
+
+    pub fn gen_chunk<C>(&mut self, i: C)
+    where
         C: Into<ChunkIndex> + Clone,
     {
         let chunk = self.generator.gen_chunk(i.clone());
@@ -161,9 +175,11 @@ impl World {
     }
 
     pub fn voxel_from_world(&self, world: cgmath::Point3<f32>) -> VoxelIndex {
-        VoxelIndex(Vector3::new(world.x as i32 - world.x.is_negative() as i32
-		, world.y as i32 - world.y.is_negative() as i32,
-		 world.z as i32 - world.z.is_negative() as i32))
+        VoxelIndex(Vector3::new(
+            world.x as i32 - world.x.is_negative() as i32,
+            world.y as i32 - world.y.is_negative() as i32,
+            world.z as i32 - world.z.is_negative() as i32,
+        ))
     }
 
     pub fn chunk(&self, chunkIndex: ChunkIndex) -> &Chunk {
@@ -180,7 +196,7 @@ impl World {
         let i = index.local_part();
         *self
             .chunk(index.chunk_index())
-            .voxel(i.x as u32, i.y as u32, i.z as u32)
+            .voxel(i.x as i32, i.y as i32, i.z as i32)
     }
 
     pub fn render(&mut self, renderer: &WorldRenderer) {
@@ -201,6 +217,18 @@ impl World {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+/// Tests
 
 mod tests {
     use super::*;
@@ -253,6 +281,33 @@ mod tests {
 
         for (sample, predicate) in samples.iter() {
             assert_eq!(sample.local_part(), *predicate);
+        }
+    }
+
+    use cgmath::Point3;
+
+    #[test]
+    pub fn world_to_voxel() {
+        let samples = [
+            (Point3::new(0.0, 0.0, 0.0), VoxelIndex::new(0, 0, 0)),
+            (Point3::new(1.2, 5.3, 6.4), VoxelIndex::new(1, 5, 6)),
+            (Point3::new(-1.2, -5.7, -2.9), VoxelIndex::new(-2, -6, -3)),
+            (
+                Point3::new(
+                    chunk::CHUNK_DIM as f32 * 3.0 + 2.0,
+                    chunk::CHUNK_DIM as f32 * 3.0 + 2.0,
+                    chunk::CHUNK_DIM as f32 * 3.0 + 2.0,
+                ),
+                VoxelIndex::new(
+                    chunk::CHUNK_DIM * 3 + 2,
+                    chunk::CHUNK_DIM * 3 + 2,
+                    chunk::CHUNK_DIM * 3 + 2,
+                ),
+            ),
+        ];
+
+        for (sample, predicate) in samples.iter() {
+            assert_eq!(VoxelIndex::from_world(*sample), *predicate);
         }
     }
 }

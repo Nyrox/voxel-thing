@@ -1,6 +1,6 @@
+use crate::transform::Transform;
 use cgmath::Rotation;
 use cgmath::{Matrix4, PerspectiveFov, Vector3, Vector4};
-use crate::transform::Transform;
 
 #[derive(Debug, Clone)]
 pub struct Camera {

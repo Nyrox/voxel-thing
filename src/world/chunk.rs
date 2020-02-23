@@ -18,8 +18,8 @@ impl BasicVertex {
     }
 }
 
-pub const CHUNK_DIM: u32 = 8;
-pub const CHUNK_HEIGHT: u32 = 124;
+pub const CHUNK_DIM: i32 = 8;
+pub const CHUNK_HEIGHT: i32 = 124;
 pub const CHUNK_N_VOXELS: usize = (CHUNK_DIM * CHUNK_DIM * CHUNK_HEIGHT) as usize;
 
 pub struct Chunk {
@@ -37,7 +37,7 @@ impl Chunk {
 
     pub fn iter_mut<F>(&mut self, mut f: F)
     where
-        F: FnMut((u32, u32, u32), &mut Voxel),
+        F: FnMut((i32, i32, i32), &mut Voxel),
     {
         for z in 0..CHUNK_DIM {
             for y in 0..CHUNK_HEIGHT {
@@ -52,7 +52,7 @@ impl Chunk {
 
     pub fn iter<F>(&self, f: F)
     where
-        F: Fn((u32, u32, u32), &Voxel),
+        F: Fn((i32, i32, i32), &Voxel),
     {
         for z in 0..CHUNK_DIM {
             for y in 0..CHUNK_HEIGHT {
@@ -63,16 +63,16 @@ impl Chunk {
         }
     }
 
-    pub fn voxel_mut(&mut self, x: u32, y: u32, z: u32) -> &mut Voxel {
+    pub fn voxel_mut(&mut self, x: i32, y: i32, z: i32) -> &mut Voxel {
         self.dirty = true;
         &mut self.voxels[(z + y * CHUNK_DIM * CHUNK_DIM + x * CHUNK_DIM) as usize]
     }
 
-    pub fn voxel(&self, x: u32, y: u32, z: u32) -> &Voxel {
+    pub fn voxel(&self, x: i32, y: i32, z: i32) -> &Voxel {
         &self.voxels[(z + y * CHUNK_DIM * CHUNK_DIM + x * CHUNK_DIM) as usize]
     }
 
-    pub fn gen_flat(ground: u32) -> Chunk {
+    pub fn gen_flat(ground: i32) -> Chunk {
         let mut chunk = Chunk::void();
 
         chunk.iter_mut(|(_, y, _), v| {

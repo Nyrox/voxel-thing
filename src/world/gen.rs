@@ -1,7 +1,7 @@
-use noise::{Perlin, NoiseFn};
+use noise::{NoiseFn, Perlin};
 
 use crate::world::chunk;
-use crate::world::{ChunkIndex, voxel::Voxel, voxel::VoxelType};
+use crate::world::{voxel::Voxel, voxel::VoxelType, ChunkIndex};
 
 pub struct WorldGenerator {
     noise: noise::Perlin,
@@ -17,7 +17,8 @@ impl WorldGenerator {
     }
 
     pub fn gen_chunk<C>(&mut self, i: C) -> chunk::Chunk
-        where C: Into<ChunkIndex>
+    where
+        C: Into<ChunkIndex>,
     {
         let mut chunk = chunk::Chunk::void();
         let i: ChunkIndex = i.into();
@@ -33,7 +34,7 @@ impl WorldGenerator {
                 Voxel {
                     voxel_type: VoxelType::GROUND,
                 }
-            }  else {
+            } else {
                 Voxel::void()
             }
         });
