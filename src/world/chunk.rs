@@ -19,7 +19,7 @@ impl BasicVertex {
 }
 
 pub const CHUNK_DIM: u32 = 8;
-pub const CHUNK_HEIGHT: u32 = 64;
+pub const CHUNK_HEIGHT: u32 = 124;
 pub const CHUNK_N_VOXELS: usize = (CHUNK_DIM * CHUNK_DIM * CHUNK_HEIGHT) as usize;
 
 pub struct Chunk {

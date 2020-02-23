@@ -1,6 +1,8 @@
 pub mod chunk;
 pub mod voxel;
 
+pub mod gen;
+
 pub use chunk::Chunk;
 pub use voxel::{Voxel, VoxelType};
 
@@ -131,13 +133,15 @@ impl WorldRenderer {
     }
 }
 
+
 pub struct World {
     pub chunks: Vec<(ChunkIndex, Chunk, ChunkRenderdata)>,
+    generator: gen::WorldGenerator,
 }
 
 impl World {
     pub fn empty() -> World {
-        World { chunks: Vec::new() }
+        World { chunks: Vec::new(), generator: gen::WorldGenerator::new(), }
     }
 
     pub fn insert_chunk<C>(&mut self, i: C, chunk: Chunk)
@@ -146,7 +150,15 @@ impl World {
     {
         self.chunks
             .push((i.into(), chunk, ChunkRenderdata::default()));
-	}
+    }
+    
+    pub fn gen_chunk<C>(&mut self, i: C) 
+    where 
+        C: Into<ChunkIndex> + Clone,
+    {
+        let chunk = self.generator.gen_chunk(i.clone());
+        self.insert_chunk(i.into(), chunk);
+    }
 
     pub fn voxel_from_world(&self, world: cgmath::Point3<f32>) -> VoxelIndex {
         VoxelIndex(Vector3::new(world.x as i32 - world.x.is_negative() as i32

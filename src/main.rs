@@ -1,12 +1,5 @@
 #![deny(unused_must_use)]
 
-extern crate cgmath;
-extern crate gl;
-extern crate glfw;
-extern crate graphics;
-extern crate libc;
-extern crate serde_json;
-
 mod camera;
 mod post;
 mod rectangle_shape;
@@ -198,15 +191,14 @@ fn main() {
         },
     );
     camera.transform.position.z = -3.0;
-
+    camera.transform.position.y = chunk::CHUNK_HEIGHT as f32 - 4.0;
     let mut world = World::empty();
-    world.insert_chunk((0, 0), Chunk::gen_flat(32));
-    world.insert_chunk((1, 0), Chunk::gen_flat(29));
-    world.insert_chunk((1, 1), Chunk::gen_flat(34));
-    world.insert_chunk((0, 1), Chunk::gen_flat(27));
-    world.insert_chunk((-1, 0), Chunk::gen_flat(29));
-    world.insert_chunk((-1, -1), Chunk::gen_flat(34));
-    world.insert_chunk((0, -1), Chunk::gen_flat(27));
+
+    for x in (-10)..10 {
+        for z in (-10)..10 {
+            world.gen_chunk((x, z));
+        }
+    }
 
     let command_buffer = Arc::new(Mutex::new(Vec::new()));
     {
@@ -227,8 +219,6 @@ fn main() {
     let mut renderer = world::WorldRenderer::new(camera.clone());
 
     let mut velocity = Vector3::<f32>::zero();
-
-    camera.transform.position.y = 35.0;
 
     let mut last_time = time::Instant::now();
     let mut total_time = 0.0;

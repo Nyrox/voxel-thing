@@ -2,7 +2,7 @@
 name = "rs-tri"
 version = "0.1.0"
 authors = ["Nyrox <mark.oliver@hotmail.de>"]
-
+edition="2018"
 
 [dependencies]
 gl="*"
@@ -11,5 +11,6 @@ graphics = { path="graphics" }
 cgmath="*"
 serde_json="*"
 glfw="*"
+noise="0.6"
 
 [workspace]
